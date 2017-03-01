@@ -146,14 +146,46 @@ L.TileLayer.include({
 			this.fire('tilecacheerror', { tile: tile, error: err });
 			return done();
 		}
+
+
+    // =============== OTG PouchDB 6.x.x patch [20170301] ======================
+    // Ref: https://github.com/MazeMap/Leaflet.TileLayer.PouchDBCached/issues/24
+
+    /*
 		var doc = {dataUrl: dataUrl, timestamp: Date.now()};
 
 		if (existingRevision) {
 			this._db.remove(tileUrl, existingRevision);
 		}
+
 		/// FIXME: There is a deprecation warning about parameters in the
 		///   this._db.put() call.
 		this._db.put(doc, tileUrl, doc.timestamp);
+    */
+
+    var doc = {_id: tileUrl, dataUrl: dataUrl, timestamp: Date.now()};
+
+    if (existingRevision) {
+      this._db.get(tileUrl).then( function(doc) {
+        return this._db.put({
+          _id: doc._id,
+          _rev: doc._rev,
+          dataUrl: dataUrl,
+          timestamp: Date.now()
+        });
+      }).then( function(response) {
+        console.log('_saveTile update: ', response);
+      });
+
+    } else {
+      this._db.put(doc).then( function(doc) {
+        console.log('_saveTile insert: ', doc);
+      });
+    }
+
+
+    // =========================================================================
+
 
 		if (done) { done(); }
 	},
@@ -259,5 +291,3 @@ L.TileLayer.include({
 	}
 
 });
-
-
