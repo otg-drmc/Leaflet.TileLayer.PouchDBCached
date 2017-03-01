@@ -174,20 +174,20 @@ L.TileLayer.include({
           timestamp: Date.now()
         });
       }).then( function(response) {
-        console.log('_saveTile update: ', response);
+        //console.log('_saveTile update: ', response);
       });
 
     } else {
       this._db.put(doc).then( function(doc) {
-        console.log('_saveTile insert: ', doc);
+        //console.log('_saveTile insert: ', doc);
       });
     }
 
-
     // =========================================================================
 
-
-		if (done) { done(); }
+		if (done) {
+      done();
+    }
 	},
 
 	// 🍂section PouchDB tile caching options
@@ -231,12 +231,13 @@ L.TileLayer.include({
 		this.fire('seedstart', seedData);
 		var tile = this._createTile();
 		tile._layer = this;
+
 		this._seedOneTile(tile, queue, seedData);
 		return this;
 	},
 
 	_createTile: function () {
-		return document.createElement('img');
+		return new Image();
 	},
 
 	// Modified L.TileLayer.getTileUrl, this will use the zoom given by the parameter coords
@@ -276,11 +277,16 @@ L.TileLayer.include({
 
 		this._db.get(url, function(err, data) {
 			if (!data) {
-				/// FIXME: Do something on tile error!!
-				tile.onload = function(ev) {
-					this._saveTile(tile, url, null); //(ev)
+				tile.onload = function(e) {
+					this._saveTile(tile, url, null);
 					this._seedOneTile(tile, remaining, seedData);
 				}.bind(this);
+
+        tile.onerror = function(e) {
+          // Could not load tile, let's continue anyways.
+	        this._seedOneTile(tile, remaining, seedData);
+        }.bind(this);
+
 				tile.crossOrigin = 'Anonymous';
 				tile.src = url;
 			} else {
