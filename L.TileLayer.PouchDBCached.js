@@ -166,14 +166,14 @@ L.TileLayer.include({
     var doc = {_id: tileUrl, dataUrl: dataUrl, timestamp: Date.now()};
 
     if (existingRevision) {
-      this._db.get(tileUrl).then( function(doc) {
+      this._db.get(tileUrl).then(function(doc) {
         return this._db.put({
           _id: doc._id,
           _rev: doc._rev,
           dataUrl: dataUrl,
           timestamp: Date.now()
         });
-      }).then( function(response) {
+      }.bind(this)).then(function(response) {
         //console.log('_saveTile update: ', response);
       });
 
@@ -182,6 +182,7 @@ L.TileLayer.include({
         //console.log('_saveTile insert: ', doc);
       });
     }
+
 
     // =========================================================================
 
