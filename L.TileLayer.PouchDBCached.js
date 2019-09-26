@@ -55,9 +55,9 @@ L.TileLayer.include({
 		}
 
 		/*
-		 Alt tag is *set to empty string to keep screen readers from reading URL and for compliance reasons
-		 http://www.w3.org/TR/WCAG20-TECHS/H67
-		 */
+		  Alt tag is *set to empty string to keep screen readers from reading URL and for compliance reasons
+		  http://www.w3.org/TR/WCAG20-TECHS/H67
+		*/
 		tile.alt = '';
 
 		var tileUrl = this.getTileUrl(coords);
@@ -95,7 +95,7 @@ L.TileLayer.include({
 						// If the tile is too old but couldn't be fetched from the network,
 						//   serve the one still in cache.
 						this.src = data.dataUrl;
-					}
+					};
 				} else {
 					// Serve tile from cached data
 					//console.log('Tile is cached: ', tileUrl);
@@ -109,12 +109,12 @@ L.TileLayer.include({
 				});
 				if (this.options.useOnlyCache) {
 					// Offline, not cached
-// 					console.log('Tile not in cache', tileUrl);
+          // 					console.log('Tile not in cache', tileUrl);
 					tile.onload = L.Util.falseFn;
 					tile.src = L.Util.emptyImageUrl;
 				} else {
 					//Online, not cached, request the tile normally
-// 					console.log('Requesting tile normally', tileUrl);
+          // 					console.log('Requesting tile normally', tileUrl);
 					if (this.options.saveToCache) {
 						tile.onload = L.bind(this._saveTile, this, tile, tileUrl, null, done);
 					} else {
@@ -132,7 +132,7 @@ L.TileLayer.include({
 	// The handler will delete the document from pouchDB if an existing revision is passed.
 	//   This will keep just the latest valid copy of the image in the cache.
 	_saveTile: function(tile, tileUrl, existingRevision, done) {
-		if (this._canvas === null) return;
+		if (this._canvas === null) return null;
 		this._canvas.width  = tile.naturalWidth  || tile.width;
 		this._canvas.height = tile.naturalHeight || tile.height;
 
@@ -144,7 +144,8 @@ L.TileLayer.include({
 			dataUrl = this._canvas.toDataURL(this.options.cacheFormat);
 		} catch(err) {
 			this.fire('tilecacheerror', { tile: tile, error: err });
-			return done();
+			done(null, err, tile);
+      return null;
 		}
 
 
@@ -152,15 +153,15 @@ L.TileLayer.include({
     // Ref: https://github.com/MazeMap/Leaflet.TileLayer.PouchDBCached/issues/24
 
     /*
-		var doc = {dataUrl: dataUrl, timestamp: Date.now()};
+		  var doc = {dataUrl: dataUrl, timestamp: Date.now()};
 
-		if (existingRevision) {
+		  if (existingRevision) {
 			this._db.remove(tileUrl, existingRevision);
-		}
+		  }
 
-		/// FIXME: There is a deprecation warning about parameters in the
-		///   this._db.put() call.
-		this._db.put(doc, tileUrl, doc.timestamp);
+		  /// FIXME: There is a deprecation warning about parameters in the
+		  ///   this._db.put() call.
+		  this._db.put(doc, tileUrl, doc.timestamp);
     */
 
     var doc = {_id: tileUrl, dataUrl: dataUrl, timestamp: Date.now()};
@@ -186,9 +187,13 @@ L.TileLayer.include({
 
     // =========================================================================
 
-		if (done) {
-      done();
+    if (done) {
+      // FIXME: Why does the "tile" have to be the second param here? Setting it as 3rd causes a
+      // tile.getAttribute("src") error. (20190926 handegar)
+      done(null, tile);
     }
+    
+    return null;    
 	},
 
 	// 🍂section PouchDB tile caching options
@@ -196,9 +201,9 @@ L.TileLayer.include({
 	// Starts seeding the cache given a bounding box and the minimum/maximum zoom levels
 	// Use with care! This can spawn thousands of requests and flood tileservers!
 	seed: function(bbox, minZoom, maxZoom) {
-		if (!this.options.useCache) return;
-		if (minZoom > maxZoom) return;
-		if (!this._map) return;
+		if (!this.options.useCache) return null;
+		if (minZoom > maxZoom) return null;
+		if (!this._map) return null;
 
 		var queue = [];
 
@@ -228,7 +233,8 @@ L.TileLayer.include({
 			minZoom: minZoom,
 			maxZoom: maxZoom,
 			queueLength: queue.length
-		}
+		};
+    
 		this.fire('seedstart', seedData);
 		var tile = this._createTile();
 		tile._layer = this;
